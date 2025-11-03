@@ -17,6 +17,7 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [designPrompt, setDesignPrompt] = useState('');
   const [loading, setLoading] = useState<'prompt' | 'images' | 'analyze' | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const handleGeneratePrompt = async () => {
     if (!applicationIdea.trim()) {
@@ -103,6 +104,26 @@ export default function Home() {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload a valid image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedImage(dataUrl);
+      setImages([]);
+      setSearchPrompt('');
+      await handleAnalyzeImage(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       <main className="container mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -137,6 +158,42 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Alternative: Upload Your Own Image */}
+        <div className="mb-8 rounded-lg bg-white dark:bg-zinc-900 p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+          <h2 className="text-xl font-semibold mb-2 text-black dark:text-zinc-50">
+            Or Upload Your Own Design Image
+          </h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+            Already have a design image? Upload it directly to analyze and extract design system details
+          </p>
+          <div className="flex items-start gap-4">
+            <label className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-black dark:text-zinc-50 font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Upload Image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={loading === 'analyze'}
+                className="hidden"
+              />
+            </label>
+            {uploadedImage && (
+              <div className="relative w-32 h-20 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                <Image
+                  src={uploadedImage}
+                  alt="Uploaded design"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Step 2: Generated Search Prompt */}
         {searchPrompt && (
           <div className="mb-8 rounded-lg bg-white dark:bg-zinc-900 p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
@@ -159,9 +216,24 @@ export default function Home() {
         {/* Step 3: Image Results */}
         {images.length > 0 && (
           <div className="mb-8 rounded-lg bg-white dark:bg-zinc-900 p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-xl font-semibold mb-4 text-black dark:text-zinc-50">
-              Step 3: Select a Design Image ({images.length} results)
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
+                Step 3: Select a Design Image ({images.length} results)
+              </h2>
+              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-sm text-black dark:text-zinc-50 font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 cursor-pointer transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Upload Instead
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={loading === 'analyze'}
+                  className="hidden"
+                />
+              </label>
+            </div>
             {loading === 'analyze' && (
               <div className="mb-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center gap-3">
